@@ -17,17 +17,62 @@ struct Transaction {
 
 #[derive(Serialize, Debug)]
 struct Block {
-    hash: Option<Vec<u8>>,
+    hash: Option<[u8; 32]>,
+    prev_hash: Option<[u8; 32]>,
+    nonce: Option<u32>,
+    transactions: Vec<Transaction>,
+}
+
+#[derive(Serialize, Debug)]
+struct HashableBlock {
     prev_hash: Option<Vec<u8>>,
     nonce: Option<u32>,
     transactions: Vec<Transaction>,
 }
 
 impl Block {
-    fn calculate_hash(&self) -> Vec<u8> {
+    fn calculate_hash(&self) -> [u8; 32] {
+        // let mut hashable_block = &self.clone();
+        // hashable_block.hash = None;
         let serialized = &bincode::serialize(&self).unwrap();
         
-        Sha256::digest(&serialized).to_vec()
+        let hash = Sha256::digest(&serialized);
+        let hashValue = hash.as_slice();
+        
+        [
+            hashValue[0],
+            hashValue[1],
+            hashValue[2],
+            hashValue[3],
+            hashValue[4],
+            hashValue[5],
+            hashValue[6],
+            hashValue[7],
+            hashValue[8],
+            hashValue[9],
+            hashValue[10],
+            hashValue[11],
+            hashValue[12],
+            hashValue[13],
+            hashValue[14],
+            hashValue[15],
+            hashValue[16],
+            hashValue[17],
+            hashValue[18],
+            hashValue[19],
+            hashValue[20],
+            hashValue[21],
+            hashValue[22],
+            hashValue[23],
+            hashValue[24],
+            hashValue[25],
+            hashValue[26],
+            hashValue[27],
+            hashValue[28],
+            hashValue[29],
+            hashValue[30],
+            hashValue[31],
+        ]
     }
     
     fn calculate_nonce_hash(&mut self) {
@@ -91,8 +136,12 @@ impl Blockchain {
                 return true;
             }
             
-            if hashes_equal(&block.hash.as_ref().unwrap().clone(), &block.calculate_hash()) {
-                return true;
+            if !hashes_equal(block.hash.unwrap(), block.calculate_hash()) {
+                return false;
+            }
+            
+            if !hashes_equal(block.hash.unwrap(), block.prev_hash.unwrap()) {
+                return false;
             }
             
             let prev_block = self.blocks.get(i - 1).unwrap();
@@ -105,19 +154,19 @@ impl Blockchain {
             //     return true;
             // }
             
-            false
+            true
         })
     }
 }
 
-fn hashes_equal(a: &Vec<u8>, b: &Vec<u8>) -> bool {
+fn hashes_equal(a: [u8; 32], b: [u8; 32]) -> bool {
     println!("hashes_equal: #{:?} #{:?}", a, b);
     
     if a.len() != b.len() {
         return false;
     }
     
-    a.iter().zip(b).all(|(a, b)| a == b)
+    a.iter().zip(&b).all(|(a, b)| a == b)
 }
 
 
